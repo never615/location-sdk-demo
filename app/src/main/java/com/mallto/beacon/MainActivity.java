@@ -36,7 +36,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-
+    public static final String PROJECT_UUID = "4012";
+    public static final String SERVER_DOMAIN_DEBUG = "https://test-easy.mall-to.com";
+    public static final String SERVER_DOMAIN_INTEGRATION = "https://integration-easy.mall-to.com";
     private final Adapter adapter = new Adapter();
     private BluetoothManager bm;
     private Button bleBtn;
@@ -108,13 +110,13 @@ public class MainActivity extends AppCompatActivity {
         List<String> uuidList = new ArrayList<>();
         // 支持的beacon uuid
         uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
-        BeaconSDK.init(new BeaconConfig.Builder()
+        BeaconSDK.init(new BeaconConfig.Builder(SERVER_DOMAIN_INTEGRATION, PROJECT_UUID)
                 .setDebug(true)
-                .setUserId("001")
                 .setDeviceUUIDList(uuidList)
                 .setNotification(notification)
                 .build());
-        BeaconSDK.start(new BeaconSDK.Callback() {
+        // username
+        BeaconSDK.start("001", new BeaconSDK.Callback() {
             @Override
             public void onRangingBeacons(List<MalltoBeacon> beacons) {
                 adapter.submitList(beacons);
