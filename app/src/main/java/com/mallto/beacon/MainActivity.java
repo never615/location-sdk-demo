@@ -15,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,19 +37,43 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    public static final String PROJECT_UUID = "4012";
-    public static final String SERVER_DOMAIN_DEBUG = "https://test-easy.mall-to.com";
-    public static final String SERVER_DOMAIN_INTEGRATION = "https://integration-easy.mall-to.com";
-    private final Adapter adapter = new Adapter();
+    public static final boolean DEBUG = true;
+
+
+    //---------- 测试环境 start--------------
+    //hkt 办公室 扫描上报
+    public static final String PROJECT_UUID = "1000283";
+    //hkt 办公室 aoa广播
+//	public static final String PROJECT_UUID = "1000239";
+    public static final String SERVER_DOMAIN = "https://test-easy.mall-to.com";
+    //---------- 测试环境 end--------------
+
+
+    //---------- 开发环境 start--------------
+    //hkt 办公室 扫描上报 项目uuid
+//	public static final String PROJECT_UUID = "1000239";
+    //墨兔办公室项目uuid
+//	public static final String PROJECT_UUID = "4012";
+//	public static final String SERVER_DOMAIN = "https://integration-easy.mall-to.com";
+    //---------- 开发环境 end --------------
+
+    //hkt 办公室ibeacon uuid
+    public static final String IBEACON_UUID = "FDA50693-A4E2-4FB1-AFCF-C6EB07647827";
+    //墨兔办公室ibeacon uuid
+//	public static final String IBEACON_UUID = "FDA50693-A4E2-4FB1-AFCF-C6EB07647826";
+
     private BluetoothManager bm;
     private Button bleBtn;
+    private EditText editText;
 
+    private final Adapter adapter = new Adapter();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         bleBtn = findViewById(R.id.btn_ble);
+        editText = findViewById(R.id.etScanInterval);
         bm = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bleBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -85,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
         Button startBtn = findViewById(R.id.btn_start);
         RecyclerView rv = findViewById(R.id.rv);
         rv.setAdapter(adapter);
@@ -103,6 +129,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void start() {
+        long scanInterval = 1100L;
+        try {
+            scanInterval = Long.parseLong(editText.getText().toString().trim());
+        } catch (NumberFormatException ignored) {}
         // android 29之后无法获取IMEI
         // target android 14+, 后台扫描需要传入通知
         Notification notification = createNotification();
@@ -110,13 +140,15 @@ public class MainActivity extends AppCompatActivity {
         List<String> uuidList = new ArrayList<>();
         // 支持的beacon uuid
         uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
-        BeaconSDK.init(new BeaconConfig.Builder(SERVER_DOMAIN_INTEGRATION, PROJECT_UUID)
-                .setDebug(true)
+        BeaconSDK.init(new BeaconConfig.Builder(SERVER_DOMAIN, PROJECT_UUID)
+                .setDebug(DEBUG)
+                .setUserId("001")
+                .setScanInterval(scanInterval)
                 .setDeviceUUIDList(uuidList)
                 .setNotification(notification)
                 .build());
         // username
-        BeaconSDK.start("001", new BeaconSDK.Callback() {
+        BeaconSDK.start(new BeaconSDK.Callback() {
             @Override
             public void onRangingBeacons(List<MalltoBeacon> beacons) {
                 adapter.submitList(beacons);

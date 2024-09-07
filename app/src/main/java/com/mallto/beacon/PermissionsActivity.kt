@@ -79,7 +79,7 @@ class PermissionsHelper(val context: Context) {
         val permissions = ArrayList<Array<String>>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // As of version M (6) we need FINE_LOCATION (or COARSE_LOCATION, but we ask for FINE)
-            permissions.add(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION))
+            permissions.add(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH_ADMIN))
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // As of version Q (10) we need FINE_LOCATION and BACKGROUND_LOCATION
@@ -92,7 +92,7 @@ class PermissionsHelper(val context: Context) {
             // Manifest.permission.BLUETOOTH_CONNECT is not absolutely required to do just scanning,
             // but it is required if you want to access some info from the scans like the device name
             // and the aditional cost of requsting this access is minimal, so we just request it
-            permissions.add(arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT))
+            permissions.add(arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_ADVERTISE))
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             // As of version T (13) we POST_NOTIFICATIONS permissions if using a foreground service

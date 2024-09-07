@@ -16,6 +16,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 
+    <EditText
+        android:id="@+id/etScanInterval"
+        android:layout_width="match_parent"
+        android:hint="扫描时间间隔 单位ms"
+        android:layout_height="wrap_content"/>
+
     <Button
         android:id="@+id/btn_start"
         android:layout_width="wrap_content"
