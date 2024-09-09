@@ -2,6 +2,9 @@
 
 ## dependencies
 ```gradle
+// copy beaconsdk-release.aar to app/libs/
+implementation(files("./libs/beaconsdk-release.aar"))
+
 implementation("org.altbeacon:android-beacon-library:2.20.6")
 implementation("com.squareup.okhttp3:okhttp:4.12.0")
 implementation("com.google.code.gson:gson:2.11.0")
@@ -57,4 +60,9 @@ BeaconSDK.start(new BeaconSDK.Callback() {
 ## 切换用户，更新username
 ```java
 BeaconSDK.updateBLEInfo("004");
+```
+
+### 4.关闭服务
+```java
+BeaconSDK.stop();
 ```
