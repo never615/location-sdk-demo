@@ -1,4 +1,4 @@
-# Beacon sdk 
+# Beacon sdk
 
 ## dependencies
 ```gradle
@@ -9,12 +9,15 @@ implementation("org.altbeacon:android-beacon-library:2.20.6")
 implementation("com.squareup.okhttp3:okhttp:4.12.0")
 implementation("com.google.code.gson:gson:2.11.0")
 ```
+定位库: app/libs/beaconsdk-release.aar
+
 ## init
 
 ```java
 List<String> uuidList = new ArrayList<>();
 // 支持的beacon uuid
 uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
+//SERVER_DOMAIN 墨兔测试环境 https://test-easy.mall-to.com PROJECT_ID: hkt office 使用 1000283
 BeaconSDK.init(new BeaconConfig.Builder(SERVER_DOMAIN, PROJECT_ID)
         .setDebug(true) //是否调试
         .setDeviceUUIDList(uuidList)
