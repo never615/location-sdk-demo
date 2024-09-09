@@ -142,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
         uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
         BeaconSDK.init(new BeaconConfig.Builder(SERVER_DOMAIN, PROJECT_UUID)
                 .setDebug(DEBUG)
-                .setUserId("001")
+                .setUserName("001")
                 .setScanInterval(scanInterval)
                 .setDeviceUUIDList(uuidList)
                 .setNotification(notification)

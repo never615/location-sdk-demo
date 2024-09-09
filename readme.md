@@ -15,6 +15,7 @@ uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
 BeaconSDK.init(new BeaconConfig.Builder(SERVER_DOMAIN, PROJECT_ID)
         .setDebug(true) //是否调试
         .setDeviceUUIDList(uuidList)
+        .setUserName("001")
         .setNotification(notification) // target android 14+, 后台扫描需要传入通知
         .setScanInterval(1100L)  // 设置扫描频率，1100ms一次
         .build());
@@ -38,11 +39,11 @@ private Notification createNotification() {
 
 ## 开启服务
 ```java
-BeaconSDK.start("userId", new BeaconSDK.Callback() {
+BeaconSDK.start(new BeaconSDK.Callback() {
     @Override
     public void onRangingBeacons(List<MalltoBeacon> beacons) {
         // 上报的beacon信息
-        adapter.submitList(beacons);
+        // adapter.submitList(beacons);
     }
 
     @Override
@@ -55,5 +56,5 @@ BeaconSDK.start("userId", new BeaconSDK.Callback() {
 
 ## 切换用户，更新username
 ```java
-BeaconSDK.updateUserId("004");
+BeaconSDK.updateBLEInfo("004");
 ```
