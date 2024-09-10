@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,6 +30,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.textfield.TextInputLayout;
 import com.mallto.sdk.BeaconConfig;
 import com.mallto.sdk.BeaconSDK;
 import com.mallto.sdk.bean.MalltoBeacon;
@@ -64,7 +66,9 @@ public class MainActivity extends AppCompatActivity {
 
     private BluetoothManager bm;
     private Button bleBtn;
-    private EditText editText;
+    private EditText etScanInterval;
+    private EditText etUserName;
+
 
     private final Adapter adapter = new Adapter();
     @Override
@@ -73,7 +77,8 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
         bleBtn = findViewById(R.id.btn_ble);
-        editText = findViewById(R.id.etScanInterval);
+        etScanInterval = findViewById(R.id.etScanInterval);
+        etUserName = findViewById(R.id.etUserName);
         bm = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bleBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -131,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
     private void start() {
         long scanInterval = 1100L;
         try {
-            scanInterval = Long.parseLong(editText.getText().toString().trim());
+            scanInterval = Long.parseLong(etScanInterval.getText().toString().trim());
         } catch (NumberFormatException ignored) {}
         // android 29之后无法获取IMEI
         // target android 14+, 后台扫描需要传入通知
@@ -140,9 +145,11 @@ public class MainActivity extends AppCompatActivity {
         List<String> uuidList = new ArrayList<>();
         // 支持的beacon uuid
         uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
+        String userName = etUserName.getText().toString().trim();
+
         BeaconSDK.init(new BeaconConfig.Builder(SERVER_DOMAIN, PROJECT_UUID)
                 .setDebug(DEBUG)
-                .setUserName("001")
+                .setUserName(userName)
                 .setScanInterval(scanInterval)
                 .setDeviceUUIDList(uuidList)
                 .setNotification(notification)

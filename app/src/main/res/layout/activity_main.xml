@@ -12,15 +12,34 @@
 
     <Button
         android:id="@+id/btn_ble"
-        android:text="blueToothStatus"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:text="blueToothStatus" />
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start"
+        android:text="扫描间隔：（ms）"/>
     <EditText
         android:id="@+id/etScanInterval"
         android:layout_width="match_parent"
-        android:hint="扫描时间间隔 单位ms"
-        android:layout_height="wrap_content"/>
+        android:layout_height="50dp"
+        android:text="1100"
+        android:hint="扫描时间间隔 单位ms" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_gravity="start"
+        android:text="用户名"/>
+    <EditText
+        android:id="@+id/etUserName"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="输入用户名"
+        android:text="001" />
 
     <Button
         android:id="@+id/btn_start"
@@ -31,7 +50,7 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv"
         android:layout_width="match_parent"
-        android:layout_height="300dp"/>
+        android:layout_height="300dp" />
 
 
 </LinearLayout>
