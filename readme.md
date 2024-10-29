@@ -1,5 +1,9 @@
 # Beacon sdk
 
+## demo下载
+
+[https://github.com/never615/location-sdk-demo/raw/refs/heads/master/apk/app-debug.apk](https://github.com/never615/location-sdk-demo/raw/refs/heads/master/apk/app-debug.apk)
+
 ## dependencies
 ```gradle
 // copy beaconsdk-release.aar to app/libs/
