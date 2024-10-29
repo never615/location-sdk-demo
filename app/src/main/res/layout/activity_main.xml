@@ -9,37 +9,121 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-
-    <Button
-        android:id="@+id/btn_ble"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="blueToothStatus" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="start"
-        android:text="扫描间隔：（ms）"/>
-    <EditText
-        android:id="@+id/etScanInterval"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:text="1100"
-        android:hint="扫描时间间隔 单位ms" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/btn_ble"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="blueToothStatus" />
+        <Button
+            android:id="@+id/btn_device_uuid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="设置beacon uuid列表" />
+    </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
+
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/border_item"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:text="上报域名："
+            android:textColor="@android:color/darker_gray" />
+
+        <TextView
+            android:id="@+id/tvDomain"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="@color/black" />
+
+        <Button
+            android:id="@+id/btn_domain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="点击更换" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:layout_gravity="start"
-        android:text="用户名"/>
-    <EditText
-        android:id="@+id/etUserName"
+        android:background="@drawable/border_item"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:text="扫描间隔：（ms）"
+            android:textColor="@android:color/darker_gray" />
+
+        <EditText
+            android:id="@+id/etScanInterval"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:hint="扫描时间间隔 单位ms"
+            android:text="1100" />
+    </LinearLayout>
+
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:hint="输入用户名"
-        android:text="001" />
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/border_item"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:text="project uuid"
+            android:textColor="@android:color/darker_gray" />
+
+        <EditText
+            android:id="@+id/etUUID"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:hint="请输入uuid" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/border_item"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:text="用户名"
+            android:textColor="@android:color/darker_gray" />
+
+        <EditText
+            android:id="@+id/etUserName"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:hint="输入用户名"
+            android:text="001" />
+
+    </LinearLayout>
+
 
     <Button
         android:id="@+id/btn_start"
@@ -50,7 +134,7 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv"
         android:layout_width="match_parent"
-        android:layout_height="300dp" />
+        android:layout_height="wrap_content" />
 
 
 </LinearLayout>

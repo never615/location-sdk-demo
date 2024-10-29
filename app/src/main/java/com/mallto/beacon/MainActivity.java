@@ -21,7 +21,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
@@ -31,12 +33,15 @@ import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.textfield.TextInputLayout;
+import com.mallto.beacon.databinding.ActivityMainBinding;
 import com.mallto.sdk.BeaconConfig;
 import com.mallto.sdk.BeaconSDK;
 import com.mallto.sdk.bean.MalltoBeacon;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     public static final boolean DEBUG = true;
@@ -68,14 +73,46 @@ public class MainActivity extends AppCompatActivity {
     private Button bleBtn;
     private EditText etScanInterval;
     private EditText etUserName;
+    private ActivityMainBinding binding;
 
+
+    private String domain = SERVER_DOMAIN;
+    private String uuid = "1000002";
+    private String username;
 
     private final Adapter adapter = new Adapter();
+    private View domainBtn;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        domain = getSharedPreferences("app", 0).getString("domain", SERVER_DOMAIN);
+        binding.tvDomain.setText(domain);
+        binding.btnDomain.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, SelectDomainActivity.class);
+                startActivityForResult(intent, 0);
+            }
+        });
+        binding.btnDeviceUuid.setOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, UuidListActivityActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        uuid = getSharedPreferences("app", 0).getString("uuid", "1000002");
+        binding.etUUID.setText(uuid);
+
+        username = getSharedPreferences("app", 0).getString("username", "HKT-test99");
+        binding.etUserName.setText(username);
+
         bleBtn = findViewById(R.id.btn_ble);
         etScanInterval = findViewById(R.id.etScanInterval);
         etUserName = findViewById(R.id.etUserName);
@@ -142,12 +179,13 @@ public class MainActivity extends AppCompatActivity {
         // target android 14+, 后台扫描需要传入通知
         Notification notification = createNotification();
 
-        List<String> uuidList = new ArrayList<>();
+        Set<String> uuidSet = getSharedPreferences("app", 0).getStringSet("uuid_list", null);
+        List<String> uuidList = new ArrayList<>(uuidSet);
         // 支持的beacon uuid
-        uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
+//        uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
         String userName = etUserName.getText().toString().trim();
 
-        BeaconSDK.init(new BeaconConfig.Builder(SERVER_DOMAIN, PROJECT_UUID)
+        BeaconSDK.init(new BeaconConfig.Builder(domain, uuid)
                 .setDebug(DEBUG)
                 .setUserName(userName)
                 .setScanInterval(scanInterval)
@@ -199,6 +237,26 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        getSharedPreferences("app", 0).edit()
+                .putString("username", username)
+                .putString("uuid", uuid)
+                .apply();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 0) {
+            if (resultCode == RESULT_OK) {
+                String newDomain = data.getStringExtra("domain");
+                domain = newDomain;
+                binding.tvDomain.setText(newDomain);
+            }
+        }
+    }
 
     static class Adapter extends ListAdapter<MalltoBeacon, Holder> {
 
