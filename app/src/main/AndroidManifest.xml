@@ -16,7 +16,7 @@
             android:name=".SelectDomainActivity"
             android:exported="false" />
         <activity
-            android:name=".UuidListActivityActivity"
+            android:name=".UuidListActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

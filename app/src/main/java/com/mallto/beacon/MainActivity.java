@@ -11,7 +11,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,7 +20,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -32,14 +30,13 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.textfield.TextInputLayout;
 import com.mallto.beacon.databinding.ActivityMainBinding;
 import com.mallto.sdk.BeaconConfig;
 import com.mallto.sdk.BeaconSDK;
 import com.mallto.sdk.bean.MalltoBeacon;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -102,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, UuidListActivityActivity.class);
+                Intent intent = new Intent(MainActivity.this, UuidListActivity.class);
                 startActivity(intent);
             }
         });
@@ -179,13 +176,13 @@ public class MainActivity extends AppCompatActivity {
         // target android 14+, 后台扫描需要传入通知
         Notification notification = createNotification();
 
-        Set<String> uuidSet = getSharedPreferences("app", 0).getStringSet("uuid_list", null);
+        Set<String> uuidSet = getSharedPreferences("app", 0).getStringSet("uuid_list", new HashSet<>());
         List<String> uuidList = new ArrayList<>(uuidSet);
         // 支持的beacon uuid
 //        uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
         String userName = etUserName.getText().toString().trim();
-
-        BeaconSDK.init(new BeaconConfig.Builder(domain, uuid)
+        String projectUUID = binding.etUUID.getText().toString().trim();
+        BeaconSDK.init(new BeaconConfig.Builder(domain, projectUUID)
                 .setDebug(DEBUG)
                 .setUserName(userName)
                 .setScanInterval(scanInterval)
@@ -203,6 +200,17 @@ public class MainActivity extends AppCompatActivity {
             public void onAdvertising() {
                 Toast.makeText(MainActivity.this, "advertising aoa...", Toast.LENGTH_SHORT).show();
             }
+
+            @Override
+            public void onError(String s) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, "error:" + s, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
         });
     }
 

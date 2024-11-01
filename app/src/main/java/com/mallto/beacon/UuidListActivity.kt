@@ -1,6 +1,5 @@
 package com.mallto.beacon
 
-import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.ViewGroup
@@ -16,11 +15,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.mallto.beacon.databinding.ActivitySelectDomainBinding
+import com.mallto.beacon.databinding.ActivityUuidListBinding
 
 
-
-class UuidListActivityActivity : AppCompatActivity() {
-    private val binding by lazy { ActivitySelectDomainBinding.inflate(layoutInflater)}
+class UuidListActivity : AppCompatActivity() {
+    private val binding by lazy { ActivityUuidListBinding.inflate(layoutInflater)}
     private val adapter = DomainAdapter()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,7 +52,7 @@ class UuidListActivityActivity : AppCompatActivity() {
                     adapter.submitList(newList)
                 }
             }
-            rv.layoutManager = LinearLayoutManager(this@UuidListActivityActivity)
+            rv.layoutManager = LinearLayoutManager(this@UuidListActivity)
             rv.adapter = adapter
             adapter.submitList(list)
         }
