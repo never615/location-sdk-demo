@@ -69,6 +69,11 @@ BeaconSDK.start(new BeaconSDK.Callback() {
 BeaconSDK.updateBLEInfo("004");
 ```
 
+## 解绑用户,用户登出的时候需要调用
+```java
+BeaconSDK.updateBLEInfo("");
+```
+
 ### 4.关闭服务
 ```java
 BeaconSDK.stop();
