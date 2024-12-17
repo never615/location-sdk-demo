@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(intent, 0);
             }
         });
-        binding.btnDeviceUuid.setOnClickListener(new View.OnClickListener(){
+        binding.btnDeviceUuid.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
@@ -171,7 +171,8 @@ public class MainActivity extends AppCompatActivity {
         long scanInterval = 1100L;
         try {
             scanInterval = Long.parseLong(etScanInterval.getText().toString().trim());
-        } catch (NumberFormatException ignored) {}
+        } catch (NumberFormatException ignored) {
+        }
         // android 29之后无法获取IMEI
         // target android 14+, 后台扫描需要传入通知
         Notification notification = createNotification();
@@ -188,6 +189,7 @@ public class MainActivity extends AppCompatActivity {
                 .setScanInterval(scanInterval)
                 .setDeviceUUIDList(uuidList)
                 .setNotification(notification)
+                .setIgnoreCertification(true)
                 .build());
         // username
         BeaconSDK.start(new BeaconSDK.Callback() {
