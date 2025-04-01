@@ -78,3 +78,12 @@ BeaconSDK.updateBLEInfo("");
 ```java
 BeaconSDK.stop();
 ```
+## FAQ
+1. 请求slug失败
+   一般为网络连接原因，请确认系统未禁止app联网权限，确保网络通畅。如服务端使用 http 部署，需在 AndroidManifest.xml 中添加如下配置：
+    ```
+   <application
+   android:usesCleartextTraffic="true"
+    ...
+   >
+   ```
