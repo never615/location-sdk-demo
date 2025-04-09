@@ -5,7 +5,6 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
     android:orientation="vertical"
     tools:context=".MainActivity">
 
@@ -17,7 +16,7 @@
             android:id="@+id/btn_ble"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="blueToothStatus" />
+            android:text="蓝牙状态" />
         <Button
             android:id="@+id/btn_device_uuid"
             android:layout_width="wrap_content"
@@ -74,6 +73,9 @@
             android:id="@+id/etScanInterval"
             android:layout_width="match_parent"
             android:layout_height="50dp"
+            android:singleLine="true"
+            android:maxLines="1"
+            android:inputType="numberDecimal"
             android:hint="扫描时间间隔 单位ms"
             android:text="1100" />
     </LinearLayout>
@@ -97,6 +99,8 @@
             android:id="@+id/etUUID"
             android:layout_width="match_parent"
             android:layout_height="50dp"
+            android:singleLine="true"
+            android:maxLines="1"
             android:hint="请输入uuid" />
 
     </LinearLayout>
@@ -119,6 +123,8 @@
             android:id="@+id/etUserName"
             android:layout_width="match_parent"
             android:layout_height="50dp"
+            android:singleLine="true"
+            android:maxLines="1"
             android:hint="输入用户名"
             android:text="001" />
 
@@ -129,6 +135,7 @@
         android:id="@+id/btn_start"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
         android:text="start" />
 
     <androidx.recyclerview.widget.RecyclerView

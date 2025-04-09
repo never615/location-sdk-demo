@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -25,6 +26,10 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.OnApplyWindowInsetsListener;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.ListAdapter;
@@ -84,6 +89,17 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), new OnApplyWindowInsetsListener(){
+
+            @NonNull
+            @Override
+            public WindowInsetsCompat onApplyWindowInsets(@NonNull View v, @NonNull WindowInsetsCompat insets) {
+                Insets inset = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(inset.left, inset.top, inset.right, inset.bottom);
+                return WindowInsetsCompat.CONSUMED;
+            }
+
+        });
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         domain = getSharedPreferences("app", 0).getString("domain", SERVER_DOMAIN);
@@ -127,24 +143,24 @@ public class MainActivity extends AppCompatActivity {
                         if (ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
                             Toast.makeText(MainActivity.this, "open bluetooth...", Toast.LENGTH_SHORT).show();
                             bm.getAdapter().enable();
-                            bleBtn.setText("blueTooth Enabled:true");
+                            bleBtn.setText("蓝牙已开启");
                         }
                     } else {
                         Toast.makeText(MainActivity.this, "open bluetooth...", Toast.LENGTH_SHORT).show();
                         bm.getAdapter().enable();
-                        bleBtn.setText("blueTooth Enabled:true");
+                        bleBtn.setText("蓝牙已开启");
                     }
                 } else {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         if (ActivityCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
                             Toast.makeText(MainActivity.this, "close bluetooth...", Toast.LENGTH_SHORT).show();
                             bm.getAdapter().disable();
-                            bleBtn.setText("blueTooth Enabled:false");
+                            bleBtn.setText("蓝牙已关闭");
                         }
                     } else {
                         Toast.makeText(MainActivity.this, "close bluetooth...", Toast.LENGTH_SHORT).show();
                         bm.getAdapter().disable();
-                        bleBtn.setText("blueTooth Enabled:false");
+                        bleBtn.setText("蓝牙已关闭");
                     }
                 }
             }
@@ -168,6 +184,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void start() {
+        Set<String> uuidSet = getSharedPreferences("app", 0).getStringSet("uuid_list", new HashSet<>());
+        if (uuidSet.isEmpty()) {
+            Intent intent = new Intent(MainActivity.this, UuidListActivity.class);
+            startActivity(intent);
+            Toast.makeText(this, "请先设置支持的beacon uuid", Toast.LENGTH_SHORT).show();
+            binding.btnStart.setText("click to start");
+            return;
+        }
         long scanInterval = 1100L;
         try {
             scanInterval = Long.parseLong(etScanInterval.getText().toString().trim());
@@ -177,7 +201,6 @@ public class MainActivity extends AppCompatActivity {
         // target android 14+, 后台扫描需要传入通知
         Notification notification = createNotification();
 
-        Set<String> uuidSet = getSharedPreferences("app", 0).getStringSet("uuid_list", new HashSet<>());
         List<String> uuidList = new ArrayList<>(uuidSet);
         // 支持的beacon uuid
 //        uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
@@ -242,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
         }
         if (checkSelfPermission(Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED) {
             boolean blueToothEnabled = bm.getAdapter().isEnabled();
-            bleBtn.setText("blueTooth Enabled:" + blueToothEnabled);
+            bleBtn.setText("蓝牙已" + (blueToothEnabled?"开启":"关闭"));
         }
 
     }
