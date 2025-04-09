@@ -22,7 +22,7 @@ import com.mallto.beacon.databinding.ActivitySelectDomainBinding
 
 val presetDomains = setOf(
     "https://test-easy.mall-to.com",
-    "https://intagration-easy.mall-to.com",
+    "https://integration-easy.mall-to.com",
     "https://location-kwhrtls-dev.tstcld61.server.ha.org.hk",
     "https://location-kccnonc-kwh-rtls-prd.cldkwhprd1.server.ha.org.hk"
 )
