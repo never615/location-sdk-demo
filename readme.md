@@ -49,6 +49,11 @@ private Notification createNotification() {
 
 ## 开启服务
 ```java
+// 有两种模式：
+// 1.beacon扫描上报模式 
+// 2.AOA广播模式
+// 调用后会持续扫描beacon，如扫描到数据，则执行扫描上报模式的逻辑，停止AOA广播（如之前有因下面的原因自动切换到AOA模式）；
+// 若连续超过10秒未扫描到beacon数据，切换AOA广播模式
 BeaconSDK.start(new BeaconSDK.Callback() {
     @Override
     public void onRangingBeacons(List<MalltoBeacon> beacons) {
