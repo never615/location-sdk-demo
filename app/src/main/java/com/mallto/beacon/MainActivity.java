@@ -223,17 +223,13 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onAdvertising() {
-                Toast.makeText(MainActivity.this, "advertising aoa...", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "advertising aoa...", Toast.LENGTH_LONG).show();
             }
 
             @Override
             public void onError(String s) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(MainActivity.this, "error:" + s, Toast.LENGTH_SHORT).show();
-                    }
-                });
+                binding.btnStart.setText("click to start");
+                Toast.makeText(MainActivity.this, "error:" + s, Toast.LENGTH_LONG).show();
             }
 
         });
