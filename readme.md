@@ -28,6 +28,7 @@ BeaconSDK.init(new BeaconConfig.Builder(SERVER_DOMAIN, PROJECT_ID)
         .setUserName("001")
         .setNotification(notification) // target android 14+, 后台扫描需要传入通知
         .setScanInterval(1100L)  // 设置扫描频率，1100ms一次
+        .setMode(BeaconConfig.Mode.AUTO) // 设置类型 AOA：仅广播；SCAN：仅扫描；AUTO：自动切换
         .build());
 
 

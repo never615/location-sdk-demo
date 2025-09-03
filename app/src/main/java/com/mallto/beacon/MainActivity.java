@@ -212,6 +212,7 @@ public class MainActivity extends AppCompatActivity {
                 .setScanInterval(scanInterval)
                 .setDeviceUUIDList(uuidList)
                 .setNotification(notification)
+                .setMode(BeaconConfig.Mode.AUTO)
                 .setIgnoreCertification(true)
                 .build());
         // username
