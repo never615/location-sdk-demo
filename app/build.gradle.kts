@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.mallto.beacon.demo"
-        minSdk = 23
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -47,4 +47,6 @@ dependencies {
     implementation("org.altbeacon:android-beacon-library:2.20.6")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.code.gson:gson:2.11.0")
+    implementation(libs.zxing)
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }

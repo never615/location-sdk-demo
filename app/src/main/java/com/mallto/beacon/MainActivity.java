@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,24 +49,6 @@ import java.util.Set;
 public class MainActivity extends AppCompatActivity {
     public static final boolean DEBUG = true;
 
-
-    //---------- 测试环境 start--------------
-    //hkt 办公室 扫描上报
-    public static final String PROJECT_UUID = "1000283";
-    //hkt 办公室 aoa广播
-//	public static final String PROJECT_UUID = "1000239";
-    public static final String SERVER_DOMAIN = "https://test-easy.mall-to.com";
-    //---------- 测试环境 end--------------
-
-
-    //---------- 开发环境 start--------------
-    //hkt 办公室 扫描上报 项目uuid
-//	public static final String PROJECT_UUID = "1000239";
-    //墨兔办公室项目uuid
-//	public static final String PROJECT_UUID = "4012";
-//	public static final String SERVER_DOMAIN = "https://integration-easy.mall-to.com";
-    //---------- 开发环境 end --------------
-
     //hkt 办公室ibeacon uuid
     public static final String IBEACON_UUID = "FDA50693-A4E2-4FB1-AFCF-C6EB07647827";
     //墨兔办公室ibeacon uuid
@@ -73,17 +56,10 @@ public class MainActivity extends AppCompatActivity {
 
     private BluetoothManager bm;
     private Button bleBtn;
-    private EditText etScanInterval;
-    private EditText etUserName;
     private ActivityMainBinding binding;
 
-
-    private String domain = SERVER_DOMAIN;
-    private String uuid = "1000002";
-    private String username;
-
     private final Adapter adapter = new Adapter();
-    private View domainBtn;
+    private static final int REQUEST_CONFIG = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,33 +78,16 @@ public class MainActivity extends AppCompatActivity {
         });
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        domain = getSharedPreferences("app", 0).getString("domain", SERVER_DOMAIN);
-        binding.tvDomain.setText(domain);
-        binding.btnDomain.setOnClickListener(new View.OnClickListener() {
+
+        binding.btnConfig.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, SelectDomainActivity.class);
-                startActivityForResult(intent, 0);
+                Intent intent = new Intent(MainActivity.this, ConfigActivity.class);
+                startActivityForResult(intent, REQUEST_CONFIG);
             }
         });
-        binding.btnDeviceUuid.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, UuidListActivity.class);
-                startActivity(intent);
-            }
-        });
-
-        uuid = getSharedPreferences("app", 0).getString("uuid", "1000002");
-        binding.etUUID.setText(uuid);
-
-        username = getSharedPreferences("app", 0).getString("username", "HKT-test99");
-        binding.etUserName.setText(username);
 
         bleBtn = findViewById(R.id.btn_ble);
-        etScanInterval = findViewById(R.id.etScanInterval);
-        etUserName = findViewById(R.id.etUserName);
         bm = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bleBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -170,14 +129,14 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView rv = findViewById(R.id.rv);
         rv.setAdapter(adapter);
         rv.setLayoutManager(new LinearLayoutManager((this)));
-        startBtn.setText("click to start");
+        startBtn.setText("启动扫描");
         startBtn.setOnClickListener(v -> {
             if (!BeaconSDK.isRunning()) {
                 start();
-                startBtn.setText("click to stop");
+                startBtn.setText("停止扫描");
             } else {
                 BeaconSDK.stop();
-                startBtn.setText("click to start");
+                startBtn.setText("启动扫描");
             }
 
         });
@@ -186,36 +145,34 @@ public class MainActivity extends AppCompatActivity {
     private void start() {
         Set<String> uuidSet = getSharedPreferences("app", 0).getStringSet("uuid_list", new HashSet<>());
         if (uuidSet.isEmpty()) {
-            Intent intent = new Intent(MainActivity.this, UuidListActivity.class);
-            startActivity(intent);
-            Toast.makeText(this, "请先设置支持的beacon uuid", Toast.LENGTH_SHORT).show();
-            binding.btnStart.setText("click to start");
+            Toast.makeText(this, "请先配置 Beacon UUID", Toast.LENGTH_SHORT).show();
+            binding.btnStart.setText("启动扫描");
+            Intent intent = new Intent(MainActivity.this, ConfigActivity.class);
+            startActivityForResult(intent, REQUEST_CONFIG);
             return;
         }
-        long scanInterval = 1100L;
-        try {
-            scanInterval = Long.parseLong(etScanInterval.getText().toString().trim());
-        } catch (NumberFormatException ignored) {
+
+        String userIdentifier = getSharedPreferences("app", 0).getString("user_identifier", "");
+        if (userIdentifier.isEmpty() || userIdentifier.length() < 6) {
+            Toast.makeText(this, "请先配置用户唯一标识", Toast.LENGTH_SHORT).show();
+            binding.btnStart.setText("启动扫描");
+            Intent intent = new Intent(MainActivity.this, ConfigActivity.class);
+            startActivityForResult(intent, REQUEST_CONFIG);
+            return;
         }
-        // android 29之后无法获取IMEI
+
         // target android 14+, 后台扫描需要传入通知
         Notification notification = createNotification();
 
         List<String> uuidList = new ArrayList<>(uuidSet);
         // 支持的beacon uuid
 //        uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
-        String userName = etUserName.getText().toString().trim();
-        String projectUUID = binding.etUUID.getText().toString().trim();
-        BeaconSDK.init(new BeaconConfig.Builder(domain, projectUUID)
+        BeaconSDK.init(new BeaconConfig.Builder()
                 .setDebug(DEBUG)
-                .setUserName(userName)
-                .setScanInterval(scanInterval)
+                .setUserIdentifier(userIdentifier)
                 .setDeviceUUIDList(uuidList)
                 .setNotification(notification)
-                .setMode(BeaconConfig.Mode.AUTO)
-                .setIgnoreCertification(true)
                 .build());
-        // username
         BeaconSDK.start(new BeaconSDK.Callback() {
             @Override
             public void onRangingBeacons(List<MalltoBeacon> beacons) {
@@ -223,13 +180,14 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onAdvertising() {
-                Toast.makeText(MainActivity.this, "advertising aoa...", Toast.LENGTH_LONG).show();
+            public void onAdvertising(int i) {
+                Log.d("MainActivity", "onAdvertising:" + i);
             }
+
 
             @Override
             public void onError(String s) {
-                binding.btnStart.setText("click to start");
+                binding.btnStart.setText("启动扫描");
                 Toast.makeText(MainActivity.this, "error:" + s, Toast.LENGTH_LONG).show();
             }
 
@@ -270,21 +228,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        getSharedPreferences("app", 0).edit()
-                .putString("username", username)
-                .putString("uuid", uuid)
-                .apply();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 0) {
-            if (resultCode == RESULT_OK) {
-                String newDomain = data.getStringExtra("domain");
-                domain = newDomain;
-                binding.tvDomain.setText(newDomain);
-            }
+        if (requestCode == REQUEST_CONFIG && resultCode == RESULT_OK) {
+            Toast.makeText(this, "配置已更新", Toast.LENGTH_SHORT).show();
         }
     }
 

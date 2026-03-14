@@ -17,6 +17,9 @@
             android:name=".SelectDomainActivity"
             android:exported="false" />
         <activity
+            android:name=".ConfigActivity"
+            android:exported="false" />
+        <activity
             android:name=".UuidListActivity"
             android:exported="false" />
         <activity
