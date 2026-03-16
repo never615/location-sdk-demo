@@ -17,7 +17,8 @@ class ConfigActivity : AppCompatActivity() {
             if (scanResult.matches(Regex("^[0-9a-fA-F]+$"))) {
                 // 检查长度是否为3字节（6位16进制字符）
                 if (scanResult.length == 6) {
-                    binding.etUserIdentifier.setText(scanResult)
+                    binding.tvUserIdentifier.text = scanResult
+                    binding.tvUserIdentifier.setTextColor(getColor(android.R.color.black))
                     Toast.makeText(this, "扫描成功", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "用户标识不符合规则：$scanResult", Toast.LENGTH_LONG).show()
@@ -74,8 +75,14 @@ class ConfigActivity : AppCompatActivity() {
 
     private fun loadConfig() {
         val prefs = getSharedPreferences("app", MODE_PRIVATE)
-        val userIdentifier = prefs.getString("user_identifier", "01c1c9") ?: "01c1c9"
-        binding.etUserIdentifier.setText(userIdentifier)
+        val userIdentifier = prefs.getString("user_identifier", "") ?: ""
+        if (userIdentifier.isNotEmpty()) {
+            binding.tvUserIdentifier.text = userIdentifier
+            binding.tvUserIdentifier.setTextColor(getColor(android.R.color.black))
+        } else {
+            binding.tvUserIdentifier.text = "未设置（请扫码获取）"
+            binding.tvUserIdentifier.setTextColor(getColor(android.R.color.darker_gray))
+        }
         updateUuidDisplay()
     }
 
@@ -84,7 +91,7 @@ class ConfigActivity : AppCompatActivity() {
         val uuidSet = prefs.getStringSet("uuid_list", emptySet()) ?: emptySet()
 
         if (uuidSet.isEmpty()) {
-            binding.tvUuidList.text = "未设置（点击下方按钮添加）"
+            binding.tvUuidList.text = "未设置（将扫描所有 Beacon 设备）"
             binding.tvUuidList.setTextColor(getColor(android.R.color.darker_gray))
         } else {
             binding.tvUuidList.text = uuidSet.joinToString("\n")
@@ -93,21 +100,11 @@ class ConfigActivity : AppCompatActivity() {
     }
 
     private fun saveConfig() {
-        val userIdentifier = binding.etUserIdentifier.text.toString().trim()
+        val userIdentifier = binding.tvUserIdentifier.text.toString().trim()
 
-        // 验证用户标识格式
-        if (userIdentifier.isEmpty()) {
-            Toast.makeText(this, "请输入用户唯一标识", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (userIdentifier.length < 6) {
-            Toast.makeText(this, "用户标识至少需要6位16进制字符", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (!userIdentifier.matches(Regex("^[0-9a-fA-F]+$"))) {
-            Toast.makeText(this, "用户标识只能包含16进制字符（0-9, a-f）", Toast.LENGTH_SHORT).show()
+        // 验证用户标识（必须通过扫码获取）
+        if (userIdentifier.isEmpty() || userIdentifier == "未设置（请扫码获取）") {
+            Toast.makeText(this, "请扫码获取用户唯一标识", Toast.LENGTH_SHORT).show()
             return
         }
 

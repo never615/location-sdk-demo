@@ -1,92 +1,152 @@
 package com.mallto.beacon
 
-import android.graphics.Color
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.TextView
-import androidx.activity.enableEdgeToEdge
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.setPadding
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.mallto.beacon.databinding.ActivitySelectDomainBinding
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.mallto.beacon.databinding.ActivityUuidListBinding
 
-
 class UuidListActivity : AppCompatActivity() {
-    private val binding by lazy { ActivityUuidListBinding.inflate(layoutInflater)}
-    private val adapter = DomainAdapter()
+    private val binding by lazy { ActivityUuidListBinding.inflate(layoutInflater) }
+    private val adapter = UuidAdapter { uuid -> removeUuid(uuid) }
+    private val uuidList = mutableListOf<String>()
+
+    companion object {
+        val COMMON_UUIDS = listOf(
+            "FDA50693-A4E2-4FB1-AFCF-C6EB07647827"
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(binding.root)
 
-        val uuidList = getSharedPreferences("app", 0).getStringSet("uuid_list", emptySet())
-        val list = mutableListOf<String>()
-        list.addAll(uuidList!!)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        loadUuidList()
 
-        binding.apply {
+        binding.rvUuidList.layoutManager = LinearLayoutManager(this)
+        binding.rvUuidList.adapter = adapter
 
-            et.setText("FDA50693-A4E2-4FB1-AFCF-C6EB07647827")
-            btnAdd.setOnClickListener {
-                val text = et.text.toString()
-                if (text.isNotBlank()) {
-                    getSharedPreferences("app", 0).edit {
-                        val newSet = uuidList.toMutableSet()
-                        newSet.add(text)
-                        putStringSet("uuid_list", newSet)
-                    }
-                    val newList = mutableListOf<String>()
-                    newList.addAll(list)
-                    newList.add(text)
-                    adapter.submitList(newList)
-                }
+        binding.btnAdd.setOnClickListener {
+            val text = binding.etUuid.text.toString().trim()
+            if (text.isBlank()) {
+                Toast.makeText(this, "请输入 UUID", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
-            rv.layoutManager = LinearLayoutManager(this@UuidListActivity)
-            rv.adapter = adapter
-            adapter.submitList(list)
+            if (uuidList.contains(text)) {
+                Toast.makeText(this, "该 UUID 已存在", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            uuidList.add(text)
+            saveUuidList()
+            refreshList()
+            binding.etUuid.text?.clear()
+            Toast.makeText(this, "添加成功", Toast.LENGTH_SHORT).show()
         }
 
-    }
-    class DomainViewHolder(view: TextView): RecyclerView.ViewHolder(view) {
-
-    }
-
-    class DiffCallback : DiffUtil.ItemCallback<String>() {
-        override fun areItemsTheSame(oldItem: String, newItem: String): Boolean {
-            return oldItem == newItem
+        binding.btnAddCommon.setOnClickListener {
+            showCommonUuidSheet()
         }
 
-        override fun areContentsTheSame(oldItem: String, newItem: String): Boolean {
-            return true
-        }
-
+        refreshList()
     }
 
-    inner class DomainAdapter() : ListAdapter<String, DomainViewHolder>(DiffCallback()) {
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DomainViewHolder {
+    private fun loadUuidList() {
+        val prefs = getSharedPreferences("app", MODE_PRIVATE)
+        val set = prefs.getStringSet("uuid_list", emptySet()) ?: emptySet()
+        uuidList.clear()
+        uuidList.addAll(set)
+    }
 
-            return DomainViewHolder(TextView(parent.context).apply {
-                setBackgroundColor(Color.GRAY)
-                setTextColor(Color.BLACK)
-                setPadding(24)
-            })
+    private fun saveUuidList() {
+        getSharedPreferences("app", MODE_PRIVATE).edit {
+            putStringSet("uuid_list", uuidList.toSet())
+        }
+    }
+
+    private fun removeUuid(uuid: String) {
+        uuidList.remove(uuid)
+        saveUuidList()
+        refreshList()
+        Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showCommonUuidSheet() {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_common_uuid, null)
+        val rv = view.findViewById<RecyclerView>(R.id.rvCommonUuid)
+        rv.layoutManager = LinearLayoutManager(this)
+        rv.adapter = CommonUuidAdapter(COMMON_UUIDS) { uuid ->
+            binding.etUuid.setText(uuid)
+            dialog.dismiss()
+        }
+        dialog.setContentView(view)
+        dialog.show()
+    }
+
+    private fun refreshList() {
+        adapter.submitList(uuidList.toList())
+        if (uuidList.isEmpty()) {
+            binding.rvUuidList.visibility = View.GONE
+            binding.tvEmptyHint.visibility = View.VISIBLE
+        } else {
+            binding.rvUuidList.visibility = View.VISIBLE
+            binding.tvEmptyHint.visibility = View.GONE
+        }
+    }
+
+    class UuidViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val tvUuid: TextView = view.findViewById(R.id.tvUuid)
+        val btnDelete: ImageButton = view.findViewById(R.id.btnDelete)
+    }
+
+    class UuidAdapter(private val onDelete: (String) -> Unit) :
+        ListAdapter<String, UuidViewHolder>(object : DiffUtil.ItemCallback<String>() {
+            override fun areItemsTheSame(oldItem: String, newItem: String) = oldItem == newItem
+            override fun areContentsTheSame(oldItem: String, newItem: String) = oldItem == newItem
+        }) {
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UuidViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_uuid, parent, false)
+            return UuidViewHolder(view)
         }
 
-        override fun onBindViewHolder(holder: DomainViewHolder, position: Int) {
-            val data = currentList[position]
-            (holder.itemView as TextView).text = data
+        override fun onBindViewHolder(holder: UuidViewHolder, position: Int) {
+            val uuid = getItem(position)
+            holder.tvUuid.text = uuid
+            holder.btnDelete.setOnClickListener { onDelete(uuid) }
+        }
+    }
+
+    class CommonUuidAdapter(
+        private val items: List<String>,
+        private val onClick: (String) -> Unit
+    ) : RecyclerView.Adapter<CommonUuidAdapter.ViewHolder>() {
+
+        class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val tvUuid: TextView = view.findViewById(R.id.tvCommonUuid)
         }
 
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_common_uuid, parent, false)
+            return ViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val uuid = items[position]
+            holder.tvUuid.text = uuid
+            holder.itemView.setOnClickListener { onClick(uuid) }
+        }
+
+        override fun getItemCount() = items.size
     }
 }

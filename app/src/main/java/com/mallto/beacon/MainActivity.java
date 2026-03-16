@@ -41,9 +41,12 @@ import com.mallto.sdk.BeaconConfig;
 import com.mallto.sdk.BeaconSDK;
 import com.mallto.sdk.bean.MalltoBeacon;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
@@ -60,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final Adapter adapter = new Adapter();
     private static final int REQUEST_CONFIG = 100;
+    private final SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -143,15 +147,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void start() {
-        Set<String> uuidSet = getSharedPreferences("app", 0).getStringSet("uuid_list", new HashSet<>());
-        if (uuidSet.isEmpty()) {
-            Toast.makeText(this, "请先配置 Beacon UUID", Toast.LENGTH_SHORT).show();
-            binding.btnStart.setText("启动扫描");
-            Intent intent = new Intent(MainActivity.this, ConfigActivity.class);
-            startActivityForResult(intent, REQUEST_CONFIG);
-            return;
-        }
-
         String userIdentifier = getSharedPreferences("app", 0).getString("user_identifier", "");
         if (userIdentifier.isEmpty() || userIdentifier.length() < 6) {
             Toast.makeText(this, "请先配置用户唯一标识", Toast.LENGTH_SHORT).show();
@@ -164,6 +159,7 @@ public class MainActivity extends AppCompatActivity {
         // target android 14+, 后台扫描需要传入通知
         Notification notification = createNotification();
 
+        Set<String> uuidSet = getSharedPreferences("app", 0).getStringSet("uuid_list", new HashSet<>());
         List<String> uuidList = new ArrayList<>(uuidSet);
         // 支持的beacon uuid
 //        uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
@@ -180,8 +176,20 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onAdvertising(int i) {
-                Log.d("MainActivity", "onAdvertising:" + i);
+            public void onAdvertising(int type, byte[] rawData) {
+                Log.d("MainActivity", "onAdvertising:" + type);
+                runOnUiThread(() -> {
+                    binding.cardAdvertising.setVisibility(View.VISIBLE);
+                    String time = sdf.format(new Date());
+                    String hex = bytesToHex(rawData);
+                    if (type == BeaconSDK.AdvertisingType.AOA) {
+                        binding.tvAoaTime.setText(time);
+                        binding.tvAoaRaw.setText(hex);
+                    } else if (type == BeaconSDK.AdvertisingType.BEACON_FORWARD) {
+                        binding.tvForwardTime.setText(time);
+                        binding.tvForwardRaw.setText(hex);
+                    }
+                });
             }
 
 
@@ -192,6 +200,15 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
+    }
+
+    private static String bytesToHex(byte[] bytes) {
+        if (bytes == null) return "--";
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X", b));
+        }
+        return sb.toString().trim();
     }
 
     private Notification createNotification() {
