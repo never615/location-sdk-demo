@@ -10,6 +10,13 @@ import com.mallto.beacon.databinding.ActivityConfigBinding
 class ConfigActivity : AppCompatActivity() {
     private lateinit var binding: ActivityConfigBinding
 
+    companion object {
+        /**
+         * 用户标识是否允许手动输入；false 时仅可通过扫码获取。
+         */
+        private const val MANUAL_INPUT_ENABLED = false
+    }
+
     private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
         if (result.contents != null) {
             val scanResult = result.contents.trim()
@@ -17,7 +24,7 @@ class ConfigActivity : AppCompatActivity() {
             if (scanResult.matches(Regex("^[0-9a-fA-F]+$"))) {
                 // 检查长度是否为3字节（6位16进制字符）
                 if (scanResult.length == 6) {
-                    binding.tvUserIdentifier.text = scanResult
+                    binding.tvUserIdentifier.setText(scanResult)
                     binding.tvUserIdentifier.setTextColor(getColor(android.R.color.black))
                     Toast.makeText(this, "扫描成功", Toast.LENGTH_SHORT).show()
                 } else {
@@ -36,6 +43,14 @@ class ConfigActivity : AppCompatActivity() {
 
         // 加载保存的配置
         loadConfig()
+
+        // 控制用户标识是否可手动输入
+        binding.tvUserIdentifier.isEnabled = MANUAL_INPUT_ENABLED
+        if (MANUAL_INPUT_ENABLED) {
+            binding.tvUserIdentifier.hint = "未设置（请扫码获取或手动输入）"
+        } else {
+            binding.tvUserIdentifier.hint = "未设置（请扫码获取）"
+        }
 
         // 设置点击事件
         binding.btnManageUuids.setOnClickListener {
@@ -77,10 +92,10 @@ class ConfigActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("app", MODE_PRIVATE)
         val userIdentifier = prefs.getString("user_identifier", "") ?: ""
         if (userIdentifier.isNotEmpty()) {
-            binding.tvUserIdentifier.text = userIdentifier
+            binding.tvUserIdentifier.setText(userIdentifier)
             binding.tvUserIdentifier.setTextColor(getColor(android.R.color.black))
         } else {
-            binding.tvUserIdentifier.text = "未设置（请扫码获取）"
+//            binding.tvUserIdentifier.setText()
             binding.tvUserIdentifier.setTextColor(getColor(android.R.color.darker_gray))
         }
         updateUuidDisplay()
@@ -104,7 +119,7 @@ class ConfigActivity : AppCompatActivity() {
 
         // 验证用户标识（必须通过扫码获取）
         if (userIdentifier.isEmpty() || userIdentifier == "未设置（请扫码获取）") {
-            Toast.makeText(this, "请扫码获取用户唯一标识", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "请扫码获取/输入用户唯一标识", Toast.LENGTH_SHORT).show()
             return
         }
 

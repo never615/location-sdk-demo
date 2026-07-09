@@ -65,11 +65,11 @@
                         android:paddingBottom="2dp" />
                 </LinearLayout>
 
-                <TextView
+                <EditText
                     android:id="@+id/tvUserIdentifier"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="未设置（请扫码获取）"
+                    android:hint="未设置（请扫码获取或手动输入）"
                     android:textSize="16sp"
                     android:textColor="@android:color/darker_gray"
                     android:fontFamily="monospace"
