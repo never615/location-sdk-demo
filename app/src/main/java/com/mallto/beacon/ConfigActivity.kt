@@ -1,8 +1,19 @@
 package com.mallto.beacon
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.DecodeHintType
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.LuminanceSource
+import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.common.HybridBinarizer
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import com.mallto.beacon.databinding.ActivityConfigBinding
@@ -19,20 +30,32 @@ class ConfigActivity : AppCompatActivity() {
 
     private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
         if (result.contents != null) {
-            val scanResult = result.contents.trim()
-            // 检查是否是有效的16进制字符串
-            if (scanResult.matches(Regex("^[0-9a-fA-F]+$"))) {
-                // 检查长度是否为3字节（6位16进制字符）
-                if (scanResult.length == 6) {
-                    binding.tvUserIdentifier.setText(scanResult)
-                    binding.tvUserIdentifier.setTextColor(getColor(android.R.color.black))
-                    Toast.makeText(this, "扫描成功", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "用户标识不符合规则：$scanResult", Toast.LENGTH_LONG).show()
-                }
+            handleScanResult(result.contents)
+        }
+    }
+
+    private val pickImageLauncher =
+        registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            if (uri != null) {
+                decodeQrFromUri(uri)
+            }
+        }
+
+    /**
+     * 处理扫码/解码结果：仅接受 6 位 16 进制字符串作为用户标识。
+     */
+    private fun handleScanResult(rawResult: String?) {
+        val scanResult = rawResult?.trim() ?: return
+        if (scanResult.matches(Regex("^[0-9a-fA-F]+$"))) {
+            if (scanResult.length == 6) {
+                binding.tvUserIdentifier.setText(scanResult)
+                binding.tvUserIdentifier.setTextColor(getColor(android.R.color.black))
+                Toast.makeText(this, "扫描成功", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "用户标识不符合规则：$scanResult", Toast.LENGTH_LONG).show()
             }
+        } else {
+            Toast.makeText(this, "用户标识不符合规则：$scanResult", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -62,6 +85,12 @@ class ConfigActivity : AppCompatActivity() {
             startQrCodeScan()
         }
 
+        binding.btnScanFromAlbum.setOnClickListener {
+            pickImageLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        }
+
         binding.btnSave.setOnClickListener {
             saveConfig()
         }
@@ -86,6 +115,103 @@ class ConfigActivity : AppCompatActivity() {
         options.setBarcodeImageEnabled(false)
         options.setOrientationLocked(true)
         barcodeLauncher.launch(options)
+    }
+
+    private fun decodeQrFromUri(uri: Uri) {
+        // 缩采样加载，避免大尺寸相机原图 OOM / 过慢
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        try {
+            contentResolver.openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, bounds)
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "无法读取图片", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val maxDim = maxOf(bounds.outWidth, bounds.outHeight)
+        var sampleSize = 1
+        while (maxDim / sampleSize > 2000) sampleSize *= 2
+        val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+
+        val bitmap: Bitmap = try {
+            contentResolver.openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, decodeOptions)
+            } ?: run {
+                Toast.makeText(this, "无法读取图片", Toast.LENGTH_SHORT).show()
+                return
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "无法读取图片", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val result = decodeQrFromBitmap(bitmap)
+        bitmap.recycle()
+        if (result != null) {
+            handleScanResult(result)
+        } else {
+            Toast.makeText(this, "未识别到二维码", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun decodeQrFromBitmap(bitmap: Bitmap): String? {
+        val w = bitmap.width
+        val h = bitmap.height
+        if (w == 0 || h == 0) return null
+
+        val hints = mapOf(
+            DecodeHintType.POSSIBLE_FORMATS to listOf("QR_CODE"),
+            DecodeHintType.TRY_HARDER to true
+        )
+
+        // 1. 整图尝试 4 个方向
+        decodeWithRotations(bitmap, hints)?.let { return it }
+
+        // 2. 滑动窗口多尺度裁剪：针对照片中只占一小块的二维码
+        val minDim = minOf(w, h)
+        val cropSizes = listOf(
+            (minDim * 0.8f).toInt(),
+            (minDim * 0.6f).toInt(),
+            (minDim * 0.45f).toInt(),
+            (minDim * 0.35f).toInt(),
+            (minDim * 0.25f).toInt()
+        )
+        for (cropSize in cropSizes) {
+            if (cropSize < 120) continue
+            val step = (cropSize / 2).coerceAtLeast(1)
+            var y = 0
+            while (y + cropSize <= h) {
+                var x = 0
+                while (x + cropSize <= w) {
+                    val crop = Bitmap.createBitmap(bitmap, x, y, cropSize, cropSize)
+                    val r = decodeWithRotations(crop, hints)
+                    crop.recycle()
+                    if (r != null) return r
+                    x += step
+                }
+                y += step
+            }
+        }
+        return null
+    }
+
+    private fun decodeWithRotations(bitmap: Bitmap, hints: Map<DecodeHintType, *>): String? {
+        val w = bitmap.width
+        val h = bitmap.height
+        val pixels = IntArray(w * h)
+        bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
+        var source: LuminanceSource = RGBLuminanceSource(w, h, pixels)
+        repeat(4) { i ->
+            val binary = BinaryBitmap(HybridBinarizer(source))
+            val reader = MultiFormatReader().apply { setHints(hints) }
+            try {
+                return reader.decodeWithState(binary).text
+            } catch (e: Exception) {
+                // 当前方向未识别，继续旋转
+            }
+            if (i < 3) source = source.rotateCounterClockwise()
+        }
+        return null
     }
 
     private fun loadConfig() {

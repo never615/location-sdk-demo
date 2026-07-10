@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./gradlew assembleDebug:*)"
+      "Bash(./gradlew assembleDebug:*)",
+      "Bash(./gradlew :app:compileDebugKotlin:*)",
+      "Bash(/usr/libexec/java_home:*)",
+      "Bash(JAVA_HOME=/Users/shingkit/Library/Java/JavaVirtualMachines/graalvm-jdk-17.0.11/Contents/Home ./gradlew :app:compileDebugKotlin:*)"
     ]
   }
 }
