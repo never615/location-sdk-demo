@@ -5,9 +5,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
-import android.text.Editable
 import android.text.InputType
-import android.text.TextWatcher
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
@@ -31,10 +29,6 @@ class ConfigActivity : AppCompatActivity() {
     private lateinit var binding: ActivityConfigBinding
 
     companion object {
-        /**
-         * 用户标识是否允许手动输入；false 时仅可通过扫码获取。
-         */
-        private const val MANUAL_INPUT_ENABLED = true
         private const val RESET_PASSWORD = "mallto2026"
 
         private const val PREF_ANDROID_ID_OFFSET = "android_id_offset"
@@ -80,23 +74,6 @@ class ConfigActivity : AppCompatActivity() {
 
         // 加载保存的配置
         loadConfig()
-
-        // 控制用户标识是否可手动输入
-        binding.tvBroadcastIdentifier.isEnabled = MANUAL_INPUT_ENABLED
-        if (MANUAL_INPUT_ENABLED) {
-            binding.tvBroadcastIdentifier.hint = "未设置（请扫码获取或手动输入）"
-        } else {
-            binding.tvBroadcastIdentifier.hint = "未设置（请扫码获取）"
-        }
-        binding.tvBroadcastIdentifier.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                displayDecimalIdentifier(s?.toString().orEmpty())
-            }
-
-            override fun afterTextChanged(s: Editable?) = Unit
-        })
 
         // 设置点击事件
         binding.btnManageUuids.setOnClickListener {
