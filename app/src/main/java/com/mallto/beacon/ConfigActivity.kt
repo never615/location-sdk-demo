@@ -5,9 +5,17 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.text.Editable
+import android.text.InputType
+import android.text.TextWatcher
+import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
@@ -27,6 +35,7 @@ class ConfigActivity : AppCompatActivity() {
          * 用户标识是否允许手动输入；false 时仅可通过扫码获取。
          */
         private const val MANUAL_INPUT_ENABLED = true
+        private const val RESET_PASSWORD = "mallto2026"
 
         private const val PREF_ANDROID_ID_OFFSET = "android_id_offset"
         // android_id 为 8 字节，截取 3 字节，偏移范围 0..5
@@ -54,8 +63,7 @@ class ConfigActivity : AppCompatActivity() {
         val scanResult = rawResult?.trim() ?: return
         if (scanResult.matches(Regex("^[0-9a-fA-F]+$"))) {
             if (scanResult.length == 6) {
-                binding.tvUserIdentifier.setText(scanResult)
-                binding.tvUserIdentifier.setTextColor(getColor(android.R.color.black))
+                displayIdentifiers(scanResult)
                 Toast.makeText(this, "扫描成功", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "用户标识不符合规则：$scanResult", Toast.LENGTH_LONG).show()
@@ -74,12 +82,21 @@ class ConfigActivity : AppCompatActivity() {
         loadConfig()
 
         // 控制用户标识是否可手动输入
-        binding.tvUserIdentifier.isEnabled = MANUAL_INPUT_ENABLED
+        binding.tvBroadcastIdentifier.isEnabled = MANUAL_INPUT_ENABLED
         if (MANUAL_INPUT_ENABLED) {
-            binding.tvUserIdentifier.hint = "未设置（请扫码获取或手动输入）"
+            binding.tvBroadcastIdentifier.hint = "未设置（请扫码获取或手动输入）"
         } else {
-            binding.tvUserIdentifier.hint = "未设置（请扫码获取）"
+            binding.tvBroadcastIdentifier.hint = "未设置（请扫码获取）"
         }
+        binding.tvBroadcastIdentifier.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                displayDecimalIdentifier(s?.toString().orEmpty())
+            }
+
+            override fun afterTextChanged(s: Editable?) = Unit
+        })
 
         // 设置点击事件
         binding.btnManageUuids.setOnClickListener {
@@ -98,7 +115,7 @@ class ConfigActivity : AppCompatActivity() {
         }
 
         binding.btnResetAndroidIdOffset.setOnClickListener {
-            generateFromAndroidId(advance = true)
+            showResetPasswordDialog()
         }
 
         binding.btnSave.setOnClickListener {
@@ -108,6 +125,59 @@ class ConfigActivity : AppCompatActivity() {
         binding.btnCancel.setOnClickListener {
             finish()
         }
+    }
+
+    private fun showResetPasswordDialog() {
+        val passwordInput = EditText(this).apply {
+            hint = "请输入密码"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            imeOptions = EditorInfo.IME_ACTION_DONE
+            isSingleLine = true
+        }
+        val horizontalPadding = (24 * resources.displayMetrics.density).toInt()
+        val inputContainer = FrameLayout(this).apply {
+            setPadding(horizontalPadding, 0, horizontalPadding, 0)
+            addView(
+                passwordInput,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("重置验证")
+            .setView(inputContainer)
+            .setNegativeButton("取消", null)
+            .setPositiveButton("确认", null)
+            .create()
+
+        dialog.setOnShowListener {
+            val submitPassword = {
+                if (passwordInput.text.toString() == RESET_PASSWORD) {
+                    dialog.dismiss()
+                    generateFromAndroidId(advance = true)
+                    Toast.makeText(this, "已重置密码", Toast.LENGTH_SHORT).show()
+                } else {
+                    passwordInput.error = "密码错误"
+                    passwordInput.selectAll()
+                }
+            }
+
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                submitPassword()
+            }
+            passwordInput.setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    submitPassword()
+                    true
+                } else {
+                    false
+                }
+            }
+            passwordInput.requestFocus()
+        }
+        dialog.show()
     }
 
     override fun onResume() {
@@ -156,9 +226,30 @@ class ConfigActivity : AppCompatActivity() {
 
         prefs.edit().putInt(PREF_ANDROID_ID_OFFSET, offset).apply()
 
-        binding.tvUserIdentifier.setText(extracted)
-        binding.tvUserIdentifier.setTextColor(getColor(android.R.color.black))
+        displayIdentifiers(extracted)
+    }
 
+    private fun displayIdentifiers(broadcastIdentifier: String) {
+        binding.tvBroadcastIdentifier.setText(broadcastIdentifier)
+        binding.tvBroadcastIdentifier.setTextColor(getColor(android.R.color.black))
+        displayDecimalIdentifier(broadcastIdentifier)
+    }
+
+    private fun displayDecimalIdentifier(broadcastIdentifier: String) {
+        val decimalIdentifier = broadcastIdentifier
+            .takeIf { it.matches(Regex("^[0-9a-fA-F]{6}$")) }
+            ?.toLong(16)
+
+        binding.tvUserIdentifier.text = decimalIdentifier?.toString().orEmpty()
+        binding.tvUserIdentifier.setTextColor(
+            getColor(
+                if (decimalIdentifier == null) {
+                    android.R.color.darker_gray
+                } else {
+                    android.R.color.black
+                }
+            )
+        )
     }
 
     private fun decodeQrFromUri(uri: Uri) {
@@ -262,12 +353,10 @@ class ConfigActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("app", MODE_PRIVATE)
         val userIdentifier = prefs.getString("user_identifier", "") ?: ""
         if (userIdentifier.isNotEmpty()) {
-            binding.tvUserIdentifier.setText(userIdentifier)
-            binding.tvUserIdentifier.setTextColor(getColor(android.R.color.black))
+            displayIdentifiers(userIdentifier)
         } else {
             // 未配置时，自动从 Android ID 截取生成
             generateFromAndroidId(advance = false)
-            binding.tvUserIdentifier.setTextColor(getColor(android.R.color.black))
         }
         updateUuidDisplay()
     }
@@ -286,7 +375,7 @@ class ConfigActivity : AppCompatActivity() {
     }
 
     private fun saveConfig() {
-        val userIdentifier = binding.tvUserIdentifier.text.toString().trim()
+        val userIdentifier = binding.tvBroadcastIdentifier.text.toString().trim()
 
         // 验证用户标识（必须通过扫码获取）
         if (userIdentifier.isEmpty() || userIdentifier == "未设置（请扫码获取）") {
