@@ -130,29 +130,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Button startBtn = findViewById(R.id.btn_start);
         RecyclerView rv = findViewById(R.id.rv);
         rv.setAdapter(adapter);
         rv.setLayoutManager(new LinearLayoutManager((this)));
-        startBtn.setText("启动扫描");
-        startBtn.setOnClickListener(v -> {
-            if (!BeaconSDK.isRunning()) {
-                if (startScanning()) {
-                    startBtn.setText("停止扫描");
-                }
-            } else {
-                BeaconSDK.stop();
-                startBtn.setText("启动扫描");
-            }
-
-        });
     }
 
     private boolean startScanning() {
         String userIdentifier = getSharedPreferences("app", 0).getString("user_identifier", "");
         if (userIdentifier.isEmpty() || userIdentifier.length() < 6) {
             Toast.makeText(this, "请先配置用户唯一标识", Toast.LENGTH_SHORT).show();
-            binding.btnStart.setText("启动扫描");
             Intent intent = new Intent(MainActivity.this, ConfigActivity.class);
             startActivityForResult(intent, REQUEST_CONFIG);
             return false;
@@ -198,7 +184,6 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onError(String s) {
-                binding.btnStart.setText("启动扫描");
                 Toast.makeText(MainActivity.this, "error:" + s, Toast.LENGTH_LONG).show();
             }
 
@@ -208,16 +193,21 @@ public class MainActivity extends AppCompatActivity {
 
     private void autoStartScanning() {
         if (BeaconSDK.isRunning()) {
-            binding.btnStart.setText("停止扫描");
             autoStartAttempted = true;
             return;
         }
         if (!autoStartAttempted) {
             autoStartAttempted = true;
-            if (startScanning()) {
-                binding.btnStart.setText("停止扫描");
-            }
+            startScanning();
         }
+    }
+
+    private boolean restartScanning() {
+        if (BeaconSDK.isRunning()) {
+            BeaconSDK.stop();
+        }
+        autoStartAttempted = true;
+        return startScanning();
     }
 
     private static String bytesToHex(byte[] bytes) {
@@ -271,7 +261,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_CONFIG && resultCode == RESULT_OK) {
-            Toast.makeText(this, "配置已更新", Toast.LENGTH_SHORT).show();
+            if (restartScanning()) {
+                Toast.makeText(this, "配置已更新，扫描已重启", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "配置已更新", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 

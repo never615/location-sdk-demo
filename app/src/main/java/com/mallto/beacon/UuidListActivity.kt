@@ -28,7 +28,6 @@ class UuidListActivity : AppCompatActivity() {
         val DEFAULT_UUIDS = setOf(BUILT_IN_UUID)
 
         val COMMON_UUIDS = listOf(
-            BUILT_IN_UUID,
             "FDA50693-A4E2-4FB1-AFCF-C6EB07647827"
         )
     }
