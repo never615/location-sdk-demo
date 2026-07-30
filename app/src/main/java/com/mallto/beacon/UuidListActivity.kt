@@ -22,7 +22,13 @@ class UuidListActivity : AppCompatActivity() {
     private val uuidList = mutableListOf<String>()
 
     companion object {
+        const val BUILT_IN_UUID = "FDA50693-A4E2-4FB1-AFCF-C6EB07647826"
+
+        @JvmField
+        val DEFAULT_UUIDS = setOf(BUILT_IN_UUID)
+
         val COMMON_UUIDS = listOf(
+            BUILT_IN_UUID,
             "FDA50693-A4E2-4FB1-AFCF-C6EB07647827"
         )
     }
@@ -62,7 +68,7 @@ class UuidListActivity : AppCompatActivity() {
 
     private fun loadUuidList() {
         val prefs = getSharedPreferences("app", MODE_PRIVATE)
-        val set = prefs.getStringSet("uuid_list", emptySet()) ?: emptySet()
+        val set = prefs.getStringSet("uuid_list", DEFAULT_UUIDS) ?: DEFAULT_UUIDS
         uuidList.clear()
         uuidList.addAll(set)
     }

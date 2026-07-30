@@ -44,7 +44,6 @@ import com.mallto.sdk.bean.MalltoBeacon;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -64,10 +63,12 @@ public class MainActivity extends AppCompatActivity {
     private final Adapter adapter = new Adapter();
     private static final int REQUEST_CONFIG = 100;
     private final SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault());
+    private boolean autoStartAttempted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UserIdentifierStore.ensureGenerated(this);
         EdgeToEdge.enable(this);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), new OnApplyWindowInsetsListener(){
 
@@ -136,8 +137,9 @@ public class MainActivity extends AppCompatActivity {
         startBtn.setText("启动扫描");
         startBtn.setOnClickListener(v -> {
             if (!BeaconSDK.isRunning()) {
-                start();
-                startBtn.setText("停止扫描");
+                if (startScanning()) {
+                    startBtn.setText("停止扫描");
+                }
             } else {
                 BeaconSDK.stop();
                 startBtn.setText("启动扫描");
@@ -146,20 +148,21 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void start() {
+    private boolean startScanning() {
         String userIdentifier = getSharedPreferences("app", 0).getString("user_identifier", "");
         if (userIdentifier.isEmpty() || userIdentifier.length() < 6) {
             Toast.makeText(this, "请先配置用户唯一标识", Toast.LENGTH_SHORT).show();
             binding.btnStart.setText("启动扫描");
             Intent intent = new Intent(MainActivity.this, ConfigActivity.class);
             startActivityForResult(intent, REQUEST_CONFIG);
-            return;
+            return false;
         }
 
         // target android 14+, 后台扫描需要传入通知
         Notification notification = createNotification();
 
-        Set<String> uuidSet = getSharedPreferences("app", 0).getStringSet("uuid_list", new HashSet<>());
+        Set<String> uuidSet = getSharedPreferences("app", 0)
+                .getStringSet("uuid_list", UuidListActivity.DEFAULT_UUIDS);
         List<String> uuidList = new ArrayList<>(uuidSet);
         // 支持的beacon uuid
 //        uuidList.add("FDA50693-A4E2-4FB1-AFCF-C6EB07647827");
@@ -200,6 +203,21 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
+        return true;
+    }
+
+    private void autoStartScanning() {
+        if (BeaconSDK.isRunning()) {
+            binding.btnStart.setText("停止扫描");
+            autoStartAttempted = true;
+            return;
+        }
+        if (!autoStartAttempted) {
+            autoStartAttempted = true;
+            if (startScanning()) {
+                binding.btnStart.setText("停止扫描");
+            }
+        }
     }
 
     private static String bytesToHex(byte[] bytes) {
@@ -229,17 +247,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!BeaconScanPermissionsActivity.Companion.allPermissionsGranted(this,
-                true)) {
+        boolean permissionsGranted = BeaconScanPermissionsActivity.Companion
+                .allPermissionsGranted(this, true);
+        if (!permissionsGranted) {
             Intent intent = new Intent(this, BeaconScanPermissionsActivity.class);
             intent.putExtra("backgroundAccessRequested", true);
             startActivity(intent);
+            return;
         }
         if (checkSelfPermission(Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED) {
             boolean blueToothEnabled = bm.getAdapter().isEnabled();
             bleBtn.setText("蓝牙已" + (blueToothEnabled?"开启":"关闭"));
         }
-
+        autoStartScanning();
     }
 
     @Override

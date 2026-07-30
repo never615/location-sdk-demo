@@ -79,7 +79,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="例如: FDA50693-A4E2-4FB1-AFCF-C6EB07647827"
+                android:text="例如: FDA50693-A4E2-4FB1-AFCF-C6EB07647826"
                 android:textSize="14sp"
                 android:textColor="@android:color/darker_gray" />
             <LinearLayout

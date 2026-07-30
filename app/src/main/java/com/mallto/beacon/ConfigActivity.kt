@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
-import android.provider.Settings
 import android.text.InputType
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
@@ -27,14 +26,10 @@ import com.mallto.beacon.databinding.ActivityConfigBinding
 
 class ConfigActivity : AppCompatActivity() {
     private lateinit var binding: ActivityConfigBinding
+    private var rawUserIdentifier = ""
 
     companion object {
         private const val RESET_PASSWORD = "mallto2026"
-
-        private const val PREF_ANDROID_ID_OFFSET = "android_id_offset"
-        // android_id 为 8 字节，截取 3 字节，偏移范围 0..5
-        private const val ANDROID_ID_EXTRACT_SIZE = 3
-        private const val ANDROID_ID_BYTES = 8
     }
 
     private val barcodeLauncher = registerForActivityResult(ScanContract()) { result ->
@@ -57,7 +52,7 @@ class ConfigActivity : AppCompatActivity() {
         val scanResult = rawResult?.trim() ?: return
         if (scanResult.matches(Regex("^[0-9a-fA-F]+$"))) {
             if (scanResult.length == 6) {
-                displayIdentifiers(scanResult)
+                updateUserIdentifier(scanResult)
                 Toast.makeText(this, "扫描成功", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "用户标识不符合规则：$scanResult", Toast.LENGTH_LONG).show()
@@ -180,40 +175,22 @@ class ConfigActivity : AppCompatActivity() {
      *                false 表示使用当前已保存的偏移生成。
      */
     private fun generateFromAndroidId(advance: Boolean) {
-        val rawId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
-        if (rawId.isNullOrBlank()) {
+        val extracted = UserIdentifierStore.generateFromAndroidId(this, advance)
+        if (extracted == null) {
             Toast.makeText(this, "无法获取 Android ID", Toast.LENGTH_SHORT).show()
             return
         }
-        // 规范化为 16 位 hex（8 字节），不足则左侧补 0
-        val hex = rawId.trim().lowercase().replace(Regex("[^0-9a-f]"), "")
-            .padStart(ANDROID_ID_BYTES * 2, '0')
-        if (hex.length < ANDROID_ID_BYTES * 2) {
-            Toast.makeText(this, "Android ID 格式异常：$rawId", Toast.LENGTH_LONG).show()
-            return
-        }
 
-        val prefs = getSharedPreferences("app", MODE_PRIVATE)
-        var offset = prefs.getInt(PREF_ANDROID_ID_OFFSET, 0)
-        if (advance) {
-            offset = (offset + 1) % (ANDROID_ID_BYTES - ANDROID_ID_EXTRACT_SIZE + 1)
-        }
-        // 截取 offset 处开始的 3 字节（6 hex 字符）
-        val extracted = hex.substring(offset * 2, (offset + ANDROID_ID_EXTRACT_SIZE) * 2)
-
-        prefs.edit().putInt(PREF_ANDROID_ID_OFFSET, offset).apply()
-
-        displayIdentifiers(extracted)
+        updateUserIdentifier(extracted)
     }
 
-    private fun displayIdentifiers(broadcastIdentifier: String) {
-        binding.tvBroadcastIdentifier.setText(broadcastIdentifier)
-        binding.tvBroadcastIdentifier.setTextColor(getColor(android.R.color.black))
-        displayDecimalIdentifier(broadcastIdentifier)
+    private fun updateUserIdentifier(userIdentifier: String) {
+        rawUserIdentifier = userIdentifier
+        displayDecimalIdentifier(userIdentifier)
     }
 
-    private fun displayDecimalIdentifier(broadcastIdentifier: String) {
-        val decimalIdentifier = broadcastIdentifier
+    private fun displayDecimalIdentifier(userIdentifier: String) {
+        val decimalIdentifier = userIdentifier
             .takeIf { it.matches(Regex("^[0-9a-fA-F]{6}$")) }
             ?.toLong(16)
 
@@ -330,7 +307,7 @@ class ConfigActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("app", MODE_PRIVATE)
         val userIdentifier = prefs.getString("user_identifier", "") ?: ""
         if (userIdentifier.isNotEmpty()) {
-            displayIdentifiers(userIdentifier)
+            updateUserIdentifier(userIdentifier)
         } else {
             // 未配置时，自动从 Android ID 截取生成
             generateFromAndroidId(advance = false)
@@ -340,7 +317,8 @@ class ConfigActivity : AppCompatActivity() {
 
     private fun updateUuidDisplay() {
         val prefs = getSharedPreferences("app", MODE_PRIVATE)
-        val uuidSet = prefs.getStringSet("uuid_list", emptySet()) ?: emptySet()
+        val uuidSet = prefs.getStringSet("uuid_list", UuidListActivity.DEFAULT_UUIDS)
+            ?: UuidListActivity.DEFAULT_UUIDS
 
         if (uuidSet.isEmpty()) {
             binding.tvUuidList.text = "未设置（将扫描所有 Beacon 设备）"
@@ -352,7 +330,7 @@ class ConfigActivity : AppCompatActivity() {
     }
 
     private fun saveConfig() {
-        val userIdentifier = binding.tvBroadcastIdentifier.text.toString().trim()
+        val userIdentifier = rawUserIdentifier.trim()
 
         // 验证用户标识（必须通过扫码获取）
         if (userIdentifier.isEmpty() || userIdentifier == "未设置（请扫码获取）") {

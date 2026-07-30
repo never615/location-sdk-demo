@@ -78,29 +78,6 @@
                     android:minHeight="48dp"
                     android:gravity="center_vertical" />
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="广播标识"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/black" />
-
-                <TextView
-                    android:id="@+id/tvBroadcastIdentifier"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="未设置"
-                    android:textSize="16sp"
-                    android:textColor="@android:color/darker_gray"
-                    android:fontFamily="monospace"
-                    android:background="#F9F9F9"
-                    android:padding="12dp"
-                    android:minHeight="48dp"
-                    android:gravity="center_vertical" />
-
                 <Button
                     android:id="@+id/btnScanQrCode"
                     android:layout_width="match_parent"
